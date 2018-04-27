@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
+using System;
 using System.Threading.Tasks;
 
 namespace VideoProcessor
@@ -16,20 +17,42 @@ namespace VideoProcessor
             if (!ctx.IsReplaying)
                 log.Info("About to call transcode video activity");
 
-            var transcodedLocation = await
-                ctx.CallActivityAsync<string>("A_TranscodeVideo", videoLocation);
+            string transcodedLocation = null;
+            string thumbnailLocation = null;
+            string withIntroLocation = null;
 
-            if (!ctx.IsReplaying)
-                log.Info("About to call extract thumbnail");
+            try
+            {
+                transcodedLocation = await
+                    ctx.CallActivityAsync<string>("A_TranscodeVideo", videoLocation);
 
-            var thumbnailLocation = await
-                ctx.CallActivityAsync<string>("A_ExtractThumbnail", transcodedLocation);
+                if (!ctx.IsReplaying)
+                    log.Info("About to call extract thumbnail");
 
-            if (!ctx.IsReplaying)
-                log.Info("About to call prepend intro");
+                thumbnailLocation = await
+                    ctx.CallActivityAsync<string>("A_ExtractThumbnail", transcodedLocation);
 
-            var withIntroLocation = await
-                ctx.CallActivityAsync<string>("A_PrependIntro", transcodedLocation);
+                if (!ctx.IsReplaying)
+                    log.Info("About to call prepend intro");
+
+                withIntroLocation = await
+                    ctx.CallActivityAsync<string>("A_PrependIntro", transcodedLocation);
+            }
+            catch (Exception e)
+            {
+                if (!ctx.IsReplaying)
+                    log.Info($"Caught an error from an activity: {e.Message}");
+
+                await
+                    ctx.CallActivityAsync<string>("A_Cleanup", 
+                        new[] { transcodedLocation, thumbnailLocation, withIntroLocation });
+
+                return new
+                {
+                    Error = "Failed to process uploaded video",
+                    Message = e.Message
+                };
+            }
 
             return new
             {

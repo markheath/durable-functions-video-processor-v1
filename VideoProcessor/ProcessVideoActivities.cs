@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs.Host;
 using System;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 
@@ -51,6 +52,20 @@ namespace VideoProcessor
             await Task.Delay(5000);
 
             return "withIntro.mp4";
+        }
+
+        [FunctionName("A_Cleanup")]
+        public static async Task<string> Cleanup(
+            [ActivityTrigger] string[] filesToCleanUp,
+            TraceWriter log)
+        {
+            foreach (var file in filesToCleanUp.Where(f => f != null))
+            {
+                log.Info($"Deleting {file}");
+                // simulate doing the activity
+                await Task.Delay(1000);
+            }
+            return "Cleaned up successfully";
         }
     }
 }
