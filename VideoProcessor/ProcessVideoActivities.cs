@@ -29,6 +29,11 @@ namespace VideoProcessor
         {
             log.Info($"Extracting Thumbnail {inputVideo}");
 
+            if (inputVideo.Contains("error"))
+            {
+                throw new InvalidOperationException("Could not extract thumbnail");
+            }
+
             // simulate doing the activity
             await Task.Delay(5000);
 
