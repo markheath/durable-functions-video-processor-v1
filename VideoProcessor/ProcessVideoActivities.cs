@@ -1,6 +1,8 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
+using System;
 using System.Configuration;
+using System.IO;
 using System.Threading.Tasks;
 
 
@@ -17,7 +19,7 @@ namespace VideoProcessor
             // simulate doing the activity
             await Task.Delay(5000);
 
-            return "transcoded.mp4";
+            return $"{Path.GetFileNameWithoutExtension(inputVideo)}-transcoded.mp4";
         }
 
         [FunctionName("A_ExtractThumbnail")]
@@ -26,6 +28,7 @@ namespace VideoProcessor
             TraceWriter log)
         {
             log.Info($"Extracting Thumbnail {inputVideo}");
+
             // simulate doing the activity
             await Task.Delay(5000);
 
