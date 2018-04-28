@@ -11,6 +11,17 @@ namespace VideoProcessor
 {
     public static class ProcessVideoActivities
     {
+        [FunctionName("A_GetTranscodeBitrates")]
+        public static int[] GetTranscodeBitrates(
+                            [ActivityTrigger] object input,
+                            TraceWriter log)
+        {
+            return ConfigurationManager.AppSettings["TranscodeBitrates"]
+                        .Split(',')
+                        .Select(int.Parse)
+                        .ToArray();
+        }
+
         [FunctionName("A_TranscodeVideo")]
         public static async Task<VideoFileInfo> TranscodeVideo(
             [ActivityTrigger] VideoFileInfo inputVideo,
