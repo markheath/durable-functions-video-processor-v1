@@ -25,8 +25,22 @@ namespace VideoProcessor
 
             try
             {
-                transcodedLocation = await
-                    ctx.CallActivityAsync<string>("A_TranscodeVideo", videoLocation);
+                var bitRates = new[] { 1000, 2000, 3000, 4000 };
+                var transcodeTasks = new List<Task<VideoFileInfo>>();
+
+                foreach (var bitRate in bitRates)
+                {
+                    var info = new VideoFileInfo() { Location = videoLocation, BitRate = bitRate };
+                    var task = ctx.CallActivityAsync<VideoFileInfo>("A_TranscodeVideo", info);
+                    transcodeTasks.Add(task);
+                }
+
+                var transcodeResults = await Task.WhenAll(transcodeTasks);
+
+                transcodedLocation = transcodeResults
+                        .OrderByDescending(r => r.BitRate)
+                        .Select(r => r.Location)
+                        .First();
 
                 if (!ctx.IsReplaying)
                     log.Info("About to call extract thumbnail");
