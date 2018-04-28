@@ -25,17 +25,8 @@ namespace VideoProcessor
 
             try
             {
-                var bitRates = await ctx.CallActivityAsync<int[]>("A_GetTranscodeBitrates", null);
-                var transcodeTasks = new List<Task<VideoFileInfo>>();
-
-                foreach (var bitRate in bitRates)
-                {
-                    var info = new VideoFileInfo() { Location = videoLocation, BitRate = bitRate };
-                    var task = ctx.CallActivityAsync<VideoFileInfo>("A_TranscodeVideo", info);
-                    transcodeTasks.Add(task);
-                }
-
-                var transcodeResults = await Task.WhenAll(transcodeTasks);
+                var transcodeResults =
+                    await ctx.CallSubOrchestratorAsync<VideoFileInfo[]>("O_TranscodeVideo", videoLocation);
 
                 transcodedLocation = transcodeResults
                         .OrderByDescending(r => r.BitRate)
@@ -77,6 +68,26 @@ namespace VideoProcessor
                 WithIntro = withIntroLocation
             };
 
+        }
+
+        [FunctionName("O_TranscodeVideo")]
+        public static async Task<VideoFileInfo[]> TranscodeVideo(
+            [OrchestrationTrigger] DurableOrchestrationContext ctx,
+            TraceWriter log)
+        {
+            var videoLocation = ctx.GetInput<string>();
+            var bitRates = await ctx.CallActivityAsync<int[]>("A_GetTranscodeBitrates", null);
+            var transcodeTasks = new List<Task<VideoFileInfo>>();
+
+            foreach (var bitRate in bitRates)
+            {
+                var info = new VideoFileInfo() { Location = videoLocation, BitRate = bitRate };
+                var task = ctx.CallActivityAsync<VideoFileInfo>("A_TranscodeVideo", info);
+                transcodeTasks.Add(task);
+            }
+
+            var transcodeResults = await Task.WhenAll(transcodeTasks);
+            return transcodeResults;
         }
     }
 }
