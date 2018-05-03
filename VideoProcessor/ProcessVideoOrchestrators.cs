@@ -44,6 +44,19 @@ namespace VideoProcessor
 
                 withIntroLocation = await
                     ctx.CallActivityAsync<string>("A_PrependIntro", transcodedLocation);
+
+                await ctx.CallActivityAsync("A_SendApprovalRequestEmail", withIntroLocation);
+
+                approvalResult = await ctx.WaitForExternalEvent<string>("ApprovalResult");
+
+                if (approvalResult == "Approved")
+                {
+                    await ctx.CallActivityAsync("A_PublishVideo", withIntroLocation);
+                }
+                else
+                {
+                    await ctx.CallActivityAsync("A_RejectVideo", withIntroLocation);
+                }
             }
             catch (Exception e)
             {
