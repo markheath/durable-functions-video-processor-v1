@@ -85,5 +85,35 @@ namespace VideoProcessor
             }
             return "Cleaned up successfully";
         }
+
+        [FunctionName("A_SendApprovalRequestEmail")]
+        public static async Task SendApprovalRequestEmail(
+            [ActivityTrigger] string inputVideo,
+            TraceWriter log)
+        {
+            log.Info($"Requesting approval for {inputVideo}");
+            // simulate sending an email
+            await Task.Delay(1000);
+        }
+
+        [FunctionName("A_PublishVideo")]
+        public static async Task PublishVideo(
+            [ActivityTrigger] string inputVideo,
+            TraceWriter log)
+        {
+            log.Info($"Publishing {inputVideo}");
+            // simulate publishing
+            await Task.Delay(1000);
+        }
+
+        [FunctionName("A_RejectVideo")]
+        public static async Task RejectVideo(
+            [ActivityTrigger] string inputVideo,
+            TraceWriter log)
+        {
+            log.Info($"Rejecting {inputVideo}");
+            // simulate performing reject actions
+            await Task.Delay(1000);
+        }
     }
 }

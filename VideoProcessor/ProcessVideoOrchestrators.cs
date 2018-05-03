@@ -22,7 +22,7 @@ namespace VideoProcessor
             string transcodedLocation = null;
             string thumbnailLocation = null;
             string withIntroLocation = null;
-
+            string approvalResult = "Unknown";
             try
             {
                 var transcodeResults =
@@ -65,7 +65,8 @@ namespace VideoProcessor
             {
                 Transcoded = transcodedLocation,
                 Thumbnail = thumbnailLocation,
-                WithIntro = withIntroLocation
+                WithIntro = withIntroLocation,
+                ApprovalResult = approvalResult
             };
 
         }
