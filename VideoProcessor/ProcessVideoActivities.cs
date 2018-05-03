@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
+using SendGrid.Helpers.Mail;
 using System;
 using System.Configuration;
 using System.IO;
@@ -87,13 +88,36 @@ namespace VideoProcessor
         }
 
         [FunctionName("A_SendApprovalRequestEmail")]
-        public static async Task SendApprovalRequestEmail(
-            [ActivityTrigger] string inputVideo,
+        public static void SendApprovalRequestEmail(
+            [ActivityTrigger] ApprovalInfo approvalInfo,
+            [SendGrid(ApiKey = "SendGridKey")] out Mail message,
+            [Table("Approvals", "AzureWebJobsStorage")] out Approval approval,
             TraceWriter log)
         {
-            log.Info($"Requesting approval for {inputVideo}");
-            // simulate sending an email
-            await Task.Delay(1000);
+            var approvalCode = Guid.NewGuid().ToString("N");
+            approval = new Approval
+            {
+                PartitionKey = "Approval",
+                RowKey = approvalCode,
+                OrchestrationId = approvalInfo.OrchestrationId
+            };
+            var approverEmail = new Email(ConfigurationManager.AppSettings["ApproverEmail"]);
+            var senderEmail = new Email(ConfigurationManager.AppSettings["SenderEmail"]);
+            var subject = "A video is awaiting approval";
+
+            log.Info($"Sending approval request for {approvalInfo.VideoLocation}");
+            var host = ConfigurationManager.AppSettings["Host"];
+
+            var functionAddress = $"{host}/api/SubmitVideoApproval/{approvalCode}";
+            var approvedLink = functionAddress + "?result=Approved";
+            var rejectedLink = functionAddress + "?result=Rejected";
+            var body = $"Please review {approvalInfo.VideoLocation}<br>"
+                               + $"<a href=\"{approvedLink}\">Approve</a><br>"
+                               + $"<a href=\"{rejectedLink}\">Reject</a>";
+            var content = new Content("text/html", body);
+            message = new Mail(senderEmail, subject, approverEmail, content);
+
+            log.Info(body);
         }
 
         [FunctionName("A_PublishVideo")]
