@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs.Host;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace VideoProcessor
@@ -51,7 +52,23 @@ namespace VideoProcessor
                     VideoLocation = withIntroLocation
                 });
 
-                approvalResult = await ctx.WaitForExternalEvent<string>("ApprovalResult");
+                using (var cts = new CancellationTokenSource())
+                {
+                    var timeoutAt = ctx.CurrentUtcDateTime.AddSeconds(30);
+                    var timeoutTask = ctx.CreateTimer(timeoutAt, cts.Token);
+                    var approvalTask = ctx.WaitForExternalEvent<string>("ApprovalResult");
+
+                    var winner = await Task.WhenAny(approvalTask, timeoutTask);
+                    if (winner == approvalTask)
+                    {
+                        approvalResult = approvalTask.Result;
+                        cts.Cancel(); // we should cancel the timeout task
+                    }
+                    else
+                    {
+                        approvalResult = "Timed Out";
+                    }
+                }
 
                 if (approvalResult == "Approved")
                 {
