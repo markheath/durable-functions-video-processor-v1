@@ -139,5 +139,13 @@ namespace VideoProcessor
             // simulate performing reject actions
             await Task.Delay(1000);
         }
+
+        [FunctionName("A_PeriodicActivity")]
+        public static void PeriodicActivity(
+            [ActivityTrigger] int timesRun,
+            TraceWriter log)
+        {
+            log.Warning($"Running the periodic activity, times run = {timesRun}");
+        }
     }
 }
